@@ -1,6 +1,6 @@
 var tasks = {};
 
-var createTask = function(taskText, taskDate, taskList) {
+var createTask = function (taskText, taskDate, taskList) {
   // create elements that make up a task item
   var taskLi = $("<li>").addClass("list-group-item");
   var taskSpan = $("<span>")
@@ -23,7 +23,7 @@ $("#modalDueDate").datepicker({
   minDate: 1
 });
 
-var loadTasks = function() {
+var loadTasks = function () {
   tasks = JSON.parse(localStorage.getItem("tasks"));
 
   // if nothing in localStorage, create a new object to track all task status arrays
@@ -37,15 +37,15 @@ var loadTasks = function() {
   }
 
   // loop over object properties
-  $.each(tasks, function(list, arr) {
+  $.each(tasks, function (list, arr) {
     // then loop over sub-array
-    arr.forEach(function(task) {
+    arr.forEach(function (task) {
       createTask(task.text, task.date, list);
     });
   });
 };
 
-var saveTasks = function() {
+var saveTasks = function () {
   localStorage.setItem("tasks", JSON.stringify(tasks));
 };
 
@@ -77,15 +77,15 @@ $(".list-group").on("blur", "textarea", function () {
     .closest(".list-group-item")
     .index();
 
-    tasks[status][index].text = text;
+  tasks[status][index].text = text;
 
-    saveTasks();
+  saveTasks();
 
-    var taskP = $("<p>")
-      .addClass("m-1")
-      .text(text);
+  var taskP = $("<p>")
+    .addClass("m-1")
+    .text(text);
 
-      $(this).replaceWith(taskP);
+  $(this).replaceWith(taskP);
 });
 
 $(".list-group").on("click", "span", function () {
@@ -93,7 +93,7 @@ $(".list-group").on("click", "span", function () {
   var date = $(this)
     .text()
     .trim();
-  
+
   var dateInput = $("<input>")
     .attr("type", "text")
     .addClass("form-control")
@@ -142,6 +142,20 @@ $(".card .list-group").sortable({
   scroll: false,
   tolerance: "pointer",
   helper: "clone",
+  activate: function () {
+    $(this).addClass("dropover");
+    $(".bottom-trash").addClass("bottom-trash-drag");
+  },
+  deactivate: function () {
+    $(this).removeClass("dropover");
+    $(".bottom-trash").removeClass("bottom-trash-drag");
+  },
+  over: function (event) {
+    $(event.target).addClass("dropover-active");
+  },
+  out: function (event) {
+    $(event.target).removeClass("dropover-active");
+  },
   update: function (event) {
     var tempArr = [];
 
@@ -174,16 +188,21 @@ $(".card .list-group").sortable({
 $("#trash").droppable({
   accept: ".card .list-group-item",
   tolerance: "touch",
+  over: function () {
+    $(".bottom-trash").addClass("bottom-trash-active");
+  },
+  out: function () {
+    $(".bottom-trash").removeClass("bottom-trash-active");
+  },
   drop: function (event, ui) {
     ui.draggable.remove();
+    $(".bottom-trash").removeClass("bottom-trash-active");
   }
 });
 
 var auditTask = function (taskEl) {
 
   var date = $(taskEl).find("span").text().trim();
-
-  console.log(date);
 
   var time = moment(date, "L").set("hour", 17);
 
@@ -198,19 +217,19 @@ var auditTask = function (taskEl) {
 };
 
 // modal was triggered
-$("#task-form-modal").on("show.bs.modal", function() {
+$("#task-form-modal").on("show.bs.modal", function () {
   // clear values
   $("#modalTaskDescription, #modalDueDate").val("");
 });
 
 // modal is fully visible
-$("#task-form-modal").on("shown.bs.modal", function() {
+$("#task-form-modal").on("shown.bs.modal", function () {
   // highlight textarea
   $("#modalTaskDescription").trigger("focus");
 });
 
 // save button in modal was clicked
-$("#task-form-modal .btn-primary").click(function() {
+$("#task-form-modal .btn-save").click(function () {
   // get form values
   var taskText = $("#modalTaskDescription").val();
   var taskDate = $("#modalDueDate").val();
@@ -232,7 +251,7 @@ $("#task-form-modal .btn-primary").click(function() {
 });
 
 // remove all tasks
-$("#remove-tasks").on("click", function() {
+$("#remove-tasks").on("click", function () {
   for (var key in tasks) {
     tasks[key].length = 0;
     $("#list-" + key).empty();
@@ -242,5 +261,11 @@ $("#remove-tasks").on("click", function() {
 
 // load tasks for the first time
 loadTasks();
+
+setInterval(function () {
+  $(".card .list-group-item").each(function (index, el) {
+    auditTask(el);
+  });
+}, 1800000);
 
 
